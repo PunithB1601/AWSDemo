@@ -1,0 +1,41 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy Spring Boot App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PRIVATE_KEY }}
+
+      - name: Copy files to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
+            rm -rf spring-app
+            mkdir spring-app
+            exit
+          EOF
+
+          scp -r * ${{ secrets.USERNAME }}@${{ secrets.HOST }}:spring-app/
+
+      - name: Deploy on EC2
+        run: |
+          ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
+            cd spring-app
+            ./mvnw clean package -DskipTests
+            docker stop app || true
+            docker rm app || true
+            docker build -t app .
+            docker run -d -p 8080:8080 --name app app
+          EOF
