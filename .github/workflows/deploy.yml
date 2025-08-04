@@ -37,5 +37,5 @@ jobs:
             docker stop app || true
             docker rm app || true
             docker build -t app .
-            docker run -d -p 8080:8080 --name app app
+            docker run -d -p 9090:9090 --name app app
           EOF
